@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LCRIG Xmas Quiz</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(185, 28, 28, 0.7); }
+            50% { transform: scale(1.04); box-shadow: 0 0 50px rgba(185, 28, 28, 0.95); }
+        }
+        .buzzer-active {
+            animation: pulse-glow 0.4s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-[#163822] text-white min-h-[812px] h-screen w-screen max-w-[375px] mx-auto flex flex-col justify-between p-6 select-none font-sans overflow-hidden">
+
+    <!-- TOP APP BAR -->
+    <header class="text-sm font-semibold tracking-wide text-white/90 pt-2">
+        LCRIG Xmas Quiz
+    </header>
+
+    <!-- CONTAINER FOR SCREENS -->
+    <main class="flex-1 flex flex-col justify-center relative">
+
+        <!-- STATE 1: HOME SCREEN -->
+        <div id="screen-home" class="flex flex-col justify-center h-full transition-opacity duration-300">
+            <div class="mb-12">
+                <h1 class="text-4xl font-black tracking-tight mb-3">Final Round</h1>
+                <p class="text-white/80 text-base leading-relaxed">Pick your team and get ready to buzz!</p>
+            </div>
+            <button onclick="goToTeamSelect()" class="w-full bg-[#b91c1c] hover:bg-[#991b1b] text-white font-bold py-4 rounded-xl shadow-lg transition active:scale-95 cursor-pointer text-lg">
+                I’m Ready!
+            </button>
+        </div>
+
+        <!-- STATE 2: TEAM SELECTOR -->
+        <div id="screen-selector" class="hidden flex flex-col justify-center h-full transition-opacity duration-300">
+            <h2 class="text-3xl font-black tracking-tight mb-8">Pick your team</h2>
+            <div class="space-y-4" id="team-buttons-container">
+                <!-- Injected dynamically -->
+            </div>
+        </div>
+
+        <!-- STATE 3: BUZZER SCREEN -->
+        <div id="screen-buzzer" class="hidden flex flex-col items-center justify-between h-full py-4 transition-opacity duration-300">
+            <div class="w-full text-left">
+                <h2 id="buzzer-team-title" class="text-3xl font-black tracking-tight">Team 1</h2>
+            </div>
+
+            <div class="flex flex-col items-center justify-center my-auto">
+                <button id="main-buzzer" onclick="triggerBuzz()" class="w-64 h-64 rounded-full bg-[#b91c1c] border-8 border-[#7f1d1d] text-[#fef08a] text-4xl font-black shadow-2xl transition transform active:scale-95 flex items-center justify-center cursor-pointer">
+                    BUZZ!
+                </button>
+                <p id="buzzer-status-text" class="mt-6 text-sm font-semibold tracking-wide text-white/70 h-6">READY</p>
+            </div>
+
+            <div class="w-full">
+                <button onclick="goToTeamSelect()" class="w-full border border-[#e5d5b3]/40 hover:border-[#e5d5b3] text-[#e5d5b3] font-semibold py-3 rounded-xl transition cursor-pointer text-sm">
+                    Back
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const teams = [
+            { id: 1, name: "Team 1", sound: 'jingle_bells' },
+            { id: 2, name: "Team 2", sound: 'hohoho' },
+            { id: 3, name: "Team 3", sound: 'deck_halls' },
+            { id: 4, name: "Team 4", sound: 'we_wish' },
+            { id: 5, name: "Team 5", sound: 'sleigh_avalanche' }
+        ];
+
+        let selectedTeam = null;
+        let audioCtx = null;
+        let masterOut = null;
+        let isLockedOut = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                const compressor = audioCtx.createDynamicsCompressor();
+                compressor.threshold.setValueAtTime(-12, audioCtx.currentTime);
+                compressor.ratio.setValueAtTime(12, audioCtx.currentTime);
+
+                const masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(1.8, audioCtx.currentTime);
+
+                masterGain.connect(compressor);
+                compressor.connect(audioCtx.destination);
+                masterOut = masterGain;
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Populate team selector buttons matching the warm gold styling
+        const selectorContainer = document.getElementById('team-buttons-container');
+        teams.forEach(t => {
+            selectorContainer.innerHTML += `
+                <button onclick="selectTeam(${t.id})" class="w-full bg-[#dfc08f] hover:bg-[#d4b077] text-slate-900 font-bold py-4 px-6 rounded-xl shadow-md transition active:scale-95 text-left text-lg cursor-pointer">
+                    ${t.name}
+                </button>
+            `;
+        });
+
+        function goToTeamSelect() {
+            initAudio();
+            document.getElementById('screen-home').classList.add('hidden');
+            document.getElementById('screen-buzzer').classList.add('hidden');
+            document.getElementById('screen-selector').classList.remove('hidden');
+        }
+
+        function selectTeam(id) {
+            selectedTeam = teams.find(t => t.id === id);
+            document.getElementById('buzzer-team-title').innerText = selectedTeam.name;
+            document.getElementById('screen-selector').classList.add('hidden');
+            document.getElementById('screen-buzzer').classList.remove('hidden');
+            resetBuzzerState();
+        }
+
+        function triggerBuzz() {
+            if (isLockedOut) return;
+            initAudio();
+            isLockedOut = true;
+
+            const buzzerBtn = document.getElementById('main-buzzer');
+            const statusText = document.getElementById('buzzer-status-text');
+
+            buzzerBtn.classList.add('buzzer-active');
+            statusText.innerText = 'BUZZED IN!';
+            statusText.className = 'mt-6 text-sm font-black tracking-wide text-yellow-300 animate-pulse h-6';
+
+            // Play sound and calculate exact duration in milliseconds
+            const soundDurationMs = playFestiveSound(selectedTeam.sound);
+
+            // Auto-reset rule: 1 second after the chime finishes playing
+            setTimeout(() => {
+                resetBuzzerState();
+            }, soundDurationMs + 1000);
+        }
+
+        function resetBuzzerState() {
+            isLockedOut = false;
+            const buzzerBtn = document.getElementById('main-buzzer');
+            const statusText = document.getElementById('buzzer-status-text');
+
+            buzzerBtn.classList.remove('buzzer-active');
+            statusText.innerText = 'READY';
+            statusText.className = 'mt-6 text-sm font-semibold tracking-wide text-white/70 h-6';
+        }
+
+        // Web Audio Synth Helpers & Durations (returns duration in ms)
+        function playChimeNote(freq, startTime, duration, type = 'triangle', vol = 0.7) {
+            const osc = audioCtx.createOscillator();
+            const overtone = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, startTime);
+            overtone.type = 'sine';
+            overtone.frequency.setValueAtTime(freq * 2, startTime);
+
+            gain.gain.setValueAtTime(0.01, startTime);
+            gain.gain.linearRampToValueAtTime(vol, startTime + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+            osc.connect(gain);
+            overtone.connect(gain);
+            gain.connect(masterOut);
+
+            osc.start(startTime);
+            overtone.start(startTime);
+            osc.stop(startTime + duration);
+            overtone.stop(startTime + duration);
+        }
+
+        function playSleighShake(startTime, duration = 0.12, vol = 0.6) {
+            const bufferSize = audioCtx.sampleRate * duration;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let j = 0; j < bufferSize; j++) data[j] = Math.random() * 2 - 1;
+            
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 6500;
+            
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(vol, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterOut);
+            noise.start(startTime);
+        }
+
+        function playFestiveSound(type) {
+            const now = audioCtx.currentTime;
+
+            if (type === 'jingle_bells') {
+                const notes = [
+                    { f: 659.25, t: 0.00, d: 0.16 }, { f: 659.25, t: 0.18, d: 0.16 }, { f: 659.25, t: 0.36, d: 0.32 },
+                    { f: 659.25, t: 0.72, d: 0.16 }, { f: 659.25, t: 0.90, d: 0.16 }, { f: 659.25, t: 1.08, d: 0.32 },
+                    { f: 659.25, t: 1.44, d: 0.16 }, { f: 783.99, t: 1.62, d: 0.16 }, { f: 523.25, t: 1.80, d: 0.22 },
+                    { f: 587.33, t: 2.04, d: 0.14 }, { f: 659.25, t: 2.20, d: 0.60 }
+                ];
+                notes.forEach(n => {
+                    playChimeNote(n.f, now + n.t, n.d, 'triangle', 0.85);
+                    playSleighShake(now + n.t, 0.1, 0.35);
+                });
+                return 2800; // total duration + buffer
+
+            } else if (type === 'hohoho') {
+                const bursts = [
+                    { f: 146.83, t: 0.00, d: 0.28 },
+                    { f: 130.81, t: 0.34, d: 0.28 },
+                    { f: 110.00, t: 0.68, d: 0.75 }
+                ];
+                bursts.forEach(b => {
+                    [1, 1.5, 2].forEach(mult => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(b.f * mult, now + b.t);
+                        gain.gain.setValueAtTime(0.01, now + b.t);
+                        gain.gain.linearRampToValueAtTime(0.45, now + b.t + 0.03);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + b.t + b.d);
+                        osc.connect(gain);
+                        gain.connect(masterOut);
+                        osc.start(now + b.t);
+                        osc.stop(now + b.t + b.d);
+                    });
+                });
+                return 1600;
+
+            } else if (type === 'deck_halls') {
+                const notes = [
+                    { f: 783.99, t: 0.00, d: 0.22 }, { f: 698.46, t: 0.24, d: 0.12 }, { f: 659.25, t: 0.38, d: 0.18 },
+                    { f: 587.33, t: 0.58, d: 0.18 }, { f: 523.25, t: 0.78, d: 0.18 }, { f: 587.33, t: 0.98, d: 0.18 },
+                    { f: 659.25, t: 1.18, d: 0.18 }, { f: 523.25, t: 1.38, d: 0.22 }, { f: 587.33, t: 1.62, d: 0.12 },
+                    { f: 659.25, t: 1.75, d: 0.12 }, { f: 698.46, t: 1.88, d: 0.12 }, { f: 587.33, t: 2.01, d: 0.16 },
+                    { f: 659.25, t: 2.19, d: 0.45 }
+                ];
+                notes.forEach(n => playChimeNote(n.f, now + n.t, n.d, 'sawtooth', 0.45));
+                return 2700;
+
+            } else if (type === 'we_wish') {
+                const notes = [
+                    { f: 523.25, t: 0.00, d: 0.18 }, { f: 698.46, t: 0.20, d: 0.20 }, { f: 698.46, t: 0.42, d: 0.12 },
+                    { f: 783.99, t: 0.55, d: 0.12 }, { f: 698.46, t: 0.68, d: 0.12 }, { f: 659.25, t: 0.81, d: 0.12 },
+                    { f: 587.33, t: 0.94, d: 0.22 }, { f: 587.33, t: 1.18, d: 0.45 }
+                ];
+                notes.forEach(n => playChimeNote(n.f, now + n.t, n.d, 'triangle', 0.9));
+                return 1800;
+
+            } else if (type === 'sleigh_avalanche') {
+                for (let i = 0; i < 14; i++) playSleighShake(now + (i * 0.08), 0.14, 0.85);
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    playChimeNote(freq, now + 0.3 + (idx * 0.06), 0.9, 'sawtooth', 0.4);
+                });
+                return 1600;
+            }
+            return 1000;
+        }
+    </script>
+</body>
+</html>
