@@ -21,12 +21,7 @@
 </head>
 <body class="bg-[#163822] text-white w-full flex flex-col select-none font-sans relative overflow-x-hidden">
 
-    <!-- SUBTLE BACKGROUND TREE SILHOUETTE (FROM FIGMA) -->
-    <svg class="fixed bottom-0 right-[-10%] h-[85dvh] w-auto text-[#1c442a] pointer-events-none z-0" viewBox="0 0 200 300" fill="currentColor">
-        <path d="M120 10 L40 120 L85 120 L25 210 L80 210 L15 280 L105 280 L105 300 L150 300 L150 280 L200 280 L200 10 Z" />
-    </svg>
-
-    <!-- TOP APP BAR (MATCHING FIGMA SAGE GREEN HEADER) -->
+    <!-- TOP APP BAR -->
     <header class="w-full bg-[#688848] px-6 py-4 text-lg font-bold tracking-wide text-white shadow-md shrink-0 z-10">
         LCRIG Xmas Quiz
     </header>
@@ -88,6 +83,7 @@
         let audioCtx = null;
         let masterOut = null;
         let isLockedOut = false;
+        let resetTimer = null;
 
         function initAudio() {
             if (!audioCtx) {
@@ -121,6 +117,8 @@
 
         function goToTeamSelect() {
             initAudio();
+            clearTimeout(resetTimer);
+            resetBuzzerState();
             document.getElementById('screen-home').classList.add('hidden');
             document.getElementById('screen-buzzer').classList.add('hidden');
             document.getElementById('screen-selector').classList.remove('hidden');
@@ -131,6 +129,7 @@
             document.getElementById('buzzer-team-title').innerText = selectedTeam.name;
             document.getElementById('screen-selector').classList.add('hidden');
             document.getElementById('screen-buzzer').classList.remove('hidden');
+            clearTimeout(resetTimer);
             resetBuzzerState();
         }
 
@@ -142,13 +141,18 @@
             const buzzerBtn = document.getElementById('main-buzzer');
             const statusText = document.getElementById('buzzer-status-text');
 
-            buzzerBtn.classList.add('buzzer-active');
+            buzzerBtn.disabled = true;
+            buzzerBtn.classList.add('buzzer-active', 'opacity-90', 'cursor-not-allowed');
+            buzzerBtn.classList.remove('cursor-pointer', 'active:scale-95');
+
             statusText.innerText = 'BUZZED IN!';
             statusText.className = 'mt-6 text-lg font-black tracking-widest text-yellow-300 animate-pulse h-7';
 
             const soundDurationMs = playFestiveSound(selectedTeam.sound);
 
-            setTimeout(() => {
+            clearTimeout(resetTimer);
+            // Reset strictly 1 full second after the entire audio tail completes
+            resetTimer = setTimeout(() => {
                 resetBuzzerState();
             }, soundDurationMs + 1000);
         }
@@ -158,7 +162,10 @@
             const buzzerBtn = document.getElementById('main-buzzer');
             const statusText = document.getElementById('buzzer-status-text');
 
-            buzzerBtn.classList.remove('buzzer-active');
+            buzzerBtn.disabled = false;
+            buzzerBtn.classList.remove('buzzer-active', 'opacity-90', 'cursor-not-allowed');
+            buzzerBtn.classList.add('cursor-pointer', 'active:scale-95');
+
             statusText.innerText = 'READY';
             statusText.className = 'mt-6 text-lg font-bold tracking-widest text-white/80 h-7';
         }
@@ -217,19 +224,19 @@
                     { f: 659.25, t: 0.00, d: 0.16 }, { f: 659.25, t: 0.18, d: 0.16 }, { f: 659.25, t: 0.36, d: 0.32 },
                     { f: 659.25, t: 0.72, d: 0.16 }, { f: 659.25, t: 0.90, d: 0.16 }, { f: 659.25, t: 1.08, d: 0.32 },
                     { f: 659.25, t: 1.44, d: 0.16 }, { f: 783.99, t: 1.62, d: 0.16 }, { f: 523.25, t: 1.80, d: 0.22 },
-                    { f: 587.33, t: 2.04, d: 0.14 }, { f: 659.25, t: 2.20, d: 0.60 }
+                    { f: 587.33, t: 2.04, d: 0.14 }, { f: 659.25, t: 2.20, d: 0.65 }
                 ];
                 notes.forEach(n => {
                     playChimeNote(n.f, now + n.t, n.d, 'triangle', 0.85);
                     playSleighShake(now + n.t, 0.1, 0.35);
                 });
-                return 2800;
+                return 3100; // Last note ends at 2.85s + safety margin
 
             } else if (type === 'hohoho') {
                 const bursts = [
                     { f: 146.83, t: 0.00, d: 0.28 },
                     { f: 130.81, t: 0.34, d: 0.28 },
-                    { f: 110.00, t: 0.68, d: 0.75 }
+                    { f: 110.00, t: 0.68, d: 0.80 }
                 ];
                 bursts.forEach(b => {
                     [1, 1.5, 2].forEach(mult => {
@@ -246,7 +253,7 @@
                         osc.stop(now + b.t + b.d);
                     });
                 });
-                return 1600;
+                return 1700; // Last burst ends at 1.48s + safety margin
 
             } else if (type === 'deck_halls') {
                 const notes = [
@@ -254,26 +261,26 @@
                     { f: 587.33, t: 0.58, d: 0.18 }, { f: 523.25, t: 0.78, d: 0.18 }, { f: 587.33, t: 0.98, d: 0.18 },
                     { f: 659.25, t: 1.18, d: 0.18 }, { f: 523.25, t: 1.38, d: 0.22 }, { f: 587.33, t: 1.62, d: 0.12 },
                     { f: 659.25, t: 1.75, d: 0.12 }, { f: 698.46, t: 1.88, d: 0.12 }, { f: 587.33, t: 2.01, d: 0.16 },
-                    { f: 659.25, t: 2.19, d: 0.45 }
+                    { f: 659.25, t: 2.19, d: 0.55 }
                 ];
                 notes.forEach(n => playChimeNote(n.f, now + n.t, n.d, 'sawtooth', 0.45));
-                return 2700;
+                return 3000; // Last note ends at 2.74s + safety margin
 
             } else if (type === 'we_wish') {
                 const notes = [
                     { f: 523.25, t: 0.00, d: 0.18 }, { f: 698.46, t: 0.20, d: 0.20 }, { f: 698.46, t: 0.42, d: 0.12 },
                     { f: 783.99, t: 0.55, d: 0.12 }, { f: 698.46, t: 0.68, d: 0.12 }, { f: 659.25, t: 0.81, d: 0.12 },
-                    { f: 587.33, t: 0.94, d: 0.22 }, { f: 587.33, t: 1.18, d: 0.45 }
+                    { f: 587.33, t: 0.94, d: 0.22 }, { f: 587.33, t: 1.18, d: 0.55 }
                 ];
                 notes.forEach(n => playChimeNote(n.f, now + n.t, n.d, 'triangle', 0.9));
-                return 1800;
+                return 2000; // Last note ends at 1.73s + safety margin
 
             } else if (type === 'sleigh_avalanche') {
                 for (let i = 0; i < 14; i++) playSleighShake(now + (i * 0.08), 0.14, 0.85);
                 [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
-                    playChimeNote(freq, now + 0.3 + (idx * 0.06), 0.9, 'sawtooth', 0.4);
+                    playChimeNote(freq, now + 0.3 + (idx * 0.06), 0.95, 'sawtooth', 0.4);
                 });
-                return 1600;
+                return 1700; // Last note ends at 1.43s + safety margin
             }
             return 1000;
         }
