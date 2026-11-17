@@ -7,15 +7,15 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         @keyframes pulse-glow {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(185, 28, 28, 0.7); }
-            50% { transform: scale(1.04); box-shadow: 0 0 50px rgba(185, 28, 28, 0.95); }
+            0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(185, 28, 28, 0.8); }
+            50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(185, 28, 28, 1); }
         }
         .buzzer-active {
             animation: pulse-glow 0.4s infinite ease-in-out;
         }
     </style>
 </head>
-<body class="bg-[#163822] text-white min-h-screen w-full max-w-[375px] mx-auto flex flex-col justify-between p-6 select-none font-sans overflow-y-auto">
+<body class="bg-[#163822] text-white min-h-screen w-full max-w-[375px] mx-auto flex flex-col justify-between p-6 select-none font-sans">
 
     <!-- TOP APP BAR -->
     <header class="text-sm font-semibold tracking-wide text-white/90 pt-2 shrink-0">
@@ -23,48 +23,52 @@
     </header>
 
     <!-- CONTAINER FOR SCREENS -->
-    <main class="flex-1 flex flex-col justify-center relative my-4">
+    <main class="flex-1 flex flex-col justify-center my-auto py-8">
 
         <!-- STATE 1: HOME SCREEN -->
-        <div id="screen-home" class="flex flex-col justify-center h-full transition-opacity duration-300">
-            <div class="mb-12">
-                <h1 class="text-4xl font-black tracking-tight mb-3">Final Round</h1>
-                <p class="text-white/80 text-base leading-relaxed">Pick your team and get ready to buzz!</p>
+        <div id="screen-home" class="flex flex-col justify-center text-center py-10 transition-opacity duration-300">
+            <div class="mb-14">
+                <div class="text-6xl mb-6">🎄</div>
+                <h1 class="text-4xl font-black tracking-tight mb-4">Final Round</h1>
+                <p class="text-white/80 text-lg leading-relaxed px-2">Pick your team and get ready to buzz!</p>
             </div>
-            <button onclick="goToTeamSelect()" class="w-full bg-[#b91c1c] hover:bg-[#991b1b] text-white font-bold py-4 rounded-xl shadow-lg transition active:scale-95 cursor-pointer text-lg">
+            <button onclick="goToTeamSelect()" class="w-full bg-[#b91c1c] hover:bg-[#991b1b] text-white font-bold py-4 rounded-2xl shadow-xl transition active:scale-95 cursor-pointer text-xl">
                 I’m Ready!
             </button>
         </div>
 
         <!-- STATE 2: TEAM SELECTOR -->
-        <div id="screen-selector" class="hidden flex flex-col justify-center h-full transition-opacity duration-300">
-            <h2 class="text-3xl font-black tracking-tight mb-6">Pick your team</h2>
-            <div class="space-y-3" id="team-buttons-container">
+        <div id="screen-selector" class="hidden flex flex-col justify-center py-6 transition-opacity duration-300">
+            <h2 class="text-3xl font-black tracking-tight mb-6 text-center">Pick your team</h2>
+            <div class="space-y-4" id="team-buttons-container">
                 <!-- Injected dynamically -->
             </div>
         </div>
 
         <!-- STATE 3: BUZZER SCREEN -->
-        <div id="screen-buzzer" class="hidden flex flex-col items-center justify-between min-h-[460px] h-full py-2 transition-opacity duration-300">
-            <div class="w-full text-left shrink-0">
+        <div id="screen-buzzer" class="hidden flex flex-col items-center justify-between py-4 h-[520px] transition-opacity duration-300">
+            <div class="w-full text-center shrink-0">
                 <h2 id="buzzer-team-title" class="text-3xl font-black tracking-tight">Team 1</h2>
             </div>
 
-            <div class="flex flex-col items-center justify-center my-6">
-                <button id="main-buzzer" onclick="triggerBuzz()" class="w-56 h-56 rounded-full bg-[#b91c1c] border-8 border-[#7f1d1d] text-[#fef08a] text-4xl font-black shadow-2xl transition transform active:scale-95 flex items-center justify-center cursor-pointer">
+            <div class="flex flex-col items-center justify-center my-auto">
+                <button id="main-buzzer" onclick="triggerBuzz()" class="w-72 h-72 rounded-full bg-[#b91c1c] border-8 border-[#7f1d1d] text-[#fef08a] text-5xl font-black shadow-2xl transition transform active:scale-95 flex items-center justify-center cursor-pointer">
                     BUZZ!
                 </button>
-                <p id="buzzer-status-text" class="mt-4 text-sm font-semibold tracking-wide text-white/70 h-6">READY</p>
+                <p id="buzzer-status-text" class="mt-6 text-base font-bold tracking-wider text-white/80 h-6">READY</p>
             </div>
 
-            <div class="w-full shrink-0">
-                <button onclick="goToTeamSelect()" class="w-full border border-[#e5d5b3]/40 hover:border-[#e5d5b3] text-[#e5d5b3] font-semibold py-3 rounded-xl transition cursor-pointer text-sm">
+            <div class="w-full shrink-0 pt-4">
+                <button onclick="goToTeamSelect()" class="w-full border border-[#e5d5b3]/40 hover:border-[#e5d5b3] text-[#e5d5b3] font-semibold py-3.5 rounded-xl transition cursor-pointer text-sm tracking-wide">
                     Back
                 </button>
             </div>
         </div>
 
     </main>
+
+    <!-- FOOTER SPACER -->
+    <div class="shrink-0 pb-2"></div>
 
     <script>
         const teams = [
@@ -104,7 +108,7 @@
         const selectorContainer = document.getElementById('team-buttons-container');
         teams.forEach(t => {
             selectorContainer.innerHTML += `
-                <button onclick="selectTeam(${t.id})" class="w-full bg-[#dfc08f] hover:bg-[#d4b077] text-slate-900 font-bold py-3.5 px-6 rounded-xl shadow-md transition active:scale-95 text-left text-lg cursor-pointer">
+                <button onclick="selectTeam(${t.id})" class="w-full bg-[#dfc08f] hover:bg-[#d4b077] text-slate-900 font-bold py-4 px-6 rounded-2xl shadow-md transition active:scale-95 text-left text-xl cursor-pointer">
                     ${t.name}
                 </button>
             `;
@@ -135,12 +139,10 @@
 
             buzzerBtn.classList.add('buzzer-active');
             statusText.innerText = 'BUZZED IN!';
-            statusText.className = 'mt-4 text-sm font-black tracking-wide text-yellow-300 animate-pulse h-6';
+            statusText.className = 'mt-6 text-base font-black tracking-wider text-yellow-300 animate-pulse h-6';
 
-            // Play sound and calculate exact duration in milliseconds
             const soundDurationMs = playFestiveSound(selectedTeam.sound);
 
-            // Auto-reset rule: 1 second after the chime finishes playing
             setTimeout(() => {
                 resetBuzzerState();
             }, soundDurationMs + 1000);
@@ -153,10 +155,9 @@
 
             buzzerBtn.classList.remove('buzzer-active');
             statusText.innerText = 'READY';
-            statusText.className = 'mt-4 text-sm font-semibold tracking-wide text-white/70 h-6';
+            statusText.className = 'mt-6 text-base font-bold tracking-wider text-white/80 h-6';
         }
 
-        // Web Audio Synth Helpers & Durations (returns duration in ms)
         function playChimeNote(freq, startTime, duration, type = 'triangle', vol = 0.7) {
             const osc = audioCtx.createOscillator();
             const overtone = audioCtx.createOscillator();
